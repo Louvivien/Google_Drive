@@ -2,8 +2,7 @@ require 'google_drive'
 require 'pry'
 require 'json'
 require 'pp'
-
-
+require 'CSV'
 
 class Scrapping
 
@@ -16,69 +15,60 @@ class Scrapping
     @ws = session.spreadsheet_by_key("1qOH4xdbIRHUsx9S1C-rMrCce61knpRujyWc7GMX_KE0").worksheets[0]
     end
 
-def get_my_hash
+    def get_my_hash
 
-my_hash = {}
-require_relative '../D9_Scrapping/townhall'
-my_hash = all
-return my_hash
+    my_hash = {}
+    require_relative '../D9_Scrapping/townhall'
+    my_hash = all
+    return my_hash
+    end
+
+#Method to go through the hash
+    def go_through_hash(my_hash)
+      puts "Writing all the values on Google Drive"
+      puts "====================================================================="
+      i = 1
+      @my_hash = my_hash
+      @my_hash.each do |key, value|
+
+        @ws[i,1] = key
+        @ws[i,2] = value
+
+        i = i+1
+        @ws.save
+      end
+    end
+
+#Method to write a hash in JSON
+
+    def write_json(my_hash)
+      my_hash = my_hash
+
+      File.open("townhall.json","w") do |f|
+        f.write(my_hash.to_json)
+      end
+    end
+
+#Method to write a hash in CSV
+
+    def write_CSV(my_hash)
+
+      my_hash = my_hash
+
+
+        CSV.open("data.csv", "wb") {|csv|
+          my_hash.to_a.each {|elem|
+            csv << elem
+            }
+          }
+
+    end
+
 end
-
-def go_through_hash(my_hash)
-  puts "Writing all the values on Google Drive"
-
-  puts "====================================================================="
-  i = 1
-  @my_hash = my_hash
-  @my_hash.each do |key, value|
-
-    @ws[i,1] = key
-    @ws[i,2] = value
-
-    i = i+1
-    @ws.save
-  end
-end
-}
-
-def writing_json
-  json = File.read('input.json')
-  obj = JSON.parse(json)
-
-  pp obj
-
-  tempHash = {
-    "key_a" => "val_a",
-    "key_b" => "val_b"
-  }
-  File.open("temp.json","w") do |f|
-    f.write(tempHash.to_json)
-  end
-end
-
-end
-
 scrapping_hash = {}
 
 test = Scrapping.new
 scrapping_hash = test.get_my_hash
+#test.go_through_hash(scrapping_hash)
+test.write_CSV(scrapping_hash)
 
-
-test.go_through_hash(scrapping_hash)
-
-=begin
-# Gets list of remote files.
-session.files.each do |file|
-  p file.title
-end
-
-# Uploads a local file.
-session.upload_from_file("/path/to/hello.txt", "hello.txt", convert: false)
-
-# Downloads to a local file.
-file = session.file_by_title("hello.txt")
-file.download_to_file("/path/to/hello.txt")
-
-# Updates content of the remote file.
-file.update_from_file("/path/to/hello.txt")
-=end
